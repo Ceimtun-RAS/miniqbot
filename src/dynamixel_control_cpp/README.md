@@ -1,341 +1,398 @@
 # Dynamixel Control - ROS 2
 
-Control de servomotores Dynamixel AX-12 desde ROS 2 (Humble) en C++.
+Control of Dynamixel AX-12 servo motors from ROS 2 (Humble) in C++.
 
 ---
 
-## Que necesitas
+## What You Need
 
-- **Ubuntu 22.04** con **ROS 2 Humble** instalado
-- **Servomotores Dynamixel AX-12** (protocolo 1.0)
-- **Adaptador USB** (U2D2, USB2Dynamixel o similar) conectado a `/dev/ttyUSB0`
-- Paquete `dynamixel_sdk` instalado en tu workspace ROS 2
+- **Ubuntu 22.04** with **ROS 2 Humble** installed
+- **Dynamixel AX-12 servo motors** (Protocol 1.0)
+- **USB adapter** (U2D2, USB2Dynamixel, or similar) connected to `/dev/ttyUSB0`
+- The `dynamixel_sdk` package installed in your ROS 2 workspace
 
 ---
 
-## Estructura del proyecto
+## Project Structure
 
 ```
 src/dynamixel_control_cpp/
+├── config/                         <-- YAML parameters for each node
+│   ├── dynamixel_node.yaml
+│   ├── monitor_node.yaml
+│   └── demo_node.yaml
+├── include/dynamixel_control_cpp/  <-- Pure logic (no ROS), unit-testable
+│   ├── ax12_model.hpp              <-- AX-12 constants and conversions
+│   ├── demo_motion.hpp             <-- Sinusoidal trajectory formulas
+│   └── monitor_display.hpp         <-- Terminal dashboard rendering
+├── launch/
+│   └── dynamixel_stack.xml         <-- Launches all 3 nodes with one command
 ├── src/
-│   ├── dynamixel_node.cpp   <-- Nodo hardware (habla con los motores)
-│   ├── monitor_node.cpp     <-- Nodo monitor  (muestra dashboard en terminal)
-│   ├── demo_node.cpp        <-- Nodo demo     (envia movimientos)
-│   ├── demo_ax12.cpp        <-- Script standalone (sin ROS, directo al motor)
-│   ├── monitor.cpp          <-- Monitor standalone (sin ROS)
-│   ├── publisher.cpp        <-- Ejemplo basico pub/sub ROS 2
-│   └── subscriber.cpp       <-- Ejemplo basico pub/sub ROS 2
+│   ├── dynamixel_node.cpp          <-- Hardware node (talks to the motors)
+│   ├── monitor_node.cpp            <-- Monitor node (terminal dashboard)
+│   ├── demo_node.cpp               <-- Demo node (sends movement commands)
+│   ├── demo_ax12.cpp               <-- Standalone script (no ROS, direct serial)
+│   ├── monitor.cpp                 <-- Standalone monitor (no ROS)
+│   ├── publisher.cpp               <-- Basic ROS 2 pub/sub example
+│   └── subscriber.cpp              <-- Basic ROS 2 pub/sub example
+├── test/
+│   └── test_ax12_model.cpp         <-- Unit tests for the header logic
 ├── CMakeLists.txt
 ├── package.xml
-└── README.md                <-- Este archivo
+└── README.md                       <-- This file
 ```
 
 ---
 
-## Conceptos clave (para novatos)
+## Key Concepts (for beginners)
 
-### Que es un servomotor Dynamixel?
+### What is a Dynamixel servo motor?
 
-Es un motor inteligente que puedes controlar desde tu computadora. Le dices
-"ve a la posicion 500" y el motor se mueve solo hasta ahi. Ademas, te dice
-en que posicion esta, cuanta fuerza esta haciendo (load) y su temperatura.
+It is a smart motor that you can control from your computer. You tell it
+"go to position 500" and the motor moves there on its own. It also reports
+its current position, how much force it is applying (load), and its temperature.
 
-### Que es ROS 2?
+### What is ROS 2?
 
-Es un framework para robots. En vez de tener un solo programa gigante que
-hace todo, divides tu robot en **nodos** (programas pequenos) que se comunican
-entre si por **topics** (canales de mensajes).
+It is a framework for robots. Instead of having one giant program that does
+everything, you split your robot into **nodes** (small programs) that
+communicate through **topics** (message channels).
 
-### Por que dividir en nodos?
+### Why split into nodes?
 
-Imagina que tienes un robot con 12 motores. Sin ROS 2 tendrias un solo
-programa enorme que hace todo: leer motores, mostrar datos, enviar comandos,
-planificar movimientos... Si algo falla, todo se cae.
+Imagine you have a robot with 12 motors. Without ROS 2 you would have a single
+huge program that does everything: read motors, display data, send commands,
+plan movements... If anything fails, everything crashes.
 
-Con ROS 2, cada tarea es un nodo independiente:
+With ROS 2, each task is an independent node:
 
 ```
 ┌─────────────────┐     /joint_states      ┌────────────────┐
 │  dynamixel_node │ ─────────────────────> │  monitor_node  │
-│   (hardware)    │   (posicion, carga,    │  (dashboard)   │
-│                 │    velocidad)           └────────────────┘
+│   (hardware)    │   (position, load,     │  (dashboard)   │
+│                 │    velocity)            └────────────────┘
 │  /dev/ttyUSB0   │
 │                 │ <─────────────────────  ┌────────────────┐
 └─────────────────┘     /joint_commands    │   demo_node    │
-                      (posiciones meta)    │ (movimientos)  │
+                      (goal positions)     │  (movements)   │
                                             └────────────────┘
 ```
 
-- Si el monitor se cae, los motores siguen funcionando.
-- Si quieres cambiar como se mueven, solo modificas `demo_node`.
-- Puedes agregar nodos nuevos (ej. planificador, vision) sin tocar los demas.
+- If the monitor crashes, the motors keep running.
+- If you want to change how they move, you only modify `demo_node`.
+- You can add new nodes (e.g., planner, vision) without touching the others.
 
 ---
 
-## Como compilar
+## How to Build
 
-Siempre en este orden:
+Always in this order:
 
 ```bash
-# 1. Cargar ROS 2 (una vez por terminal)
+# 1. Load ROS 2 (once per terminal)
 source /opt/ros/humble/setup.bash
 
-# 2. Ir al workspace
-cd ~/enigma_ws
+# 2. Go to the workspace
+cd ~/miniqbot
 
-# 3. Compilar
+# 3. Build
 colcon build --packages-select dynamixel_control_cpp
 
-# 4. Cargar los ejecutables recien compilados
+# 4. Load the freshly built executables
 source install/setup.bash
 ```
 
-> **Regla de oro:** `source ROS` -> `colcon build` -> `source install` -> ejecutar.
+> **Golden rule:** `source ROS` → `colcon build` → `source install` → run.
 
 ---
 
-## Como ejecutar (sistema ROS 2 completo)
+## How to Run (full ROS 2 system)
 
-Necesitas **3 terminales**. En cada una, primero ejecuta:
+You need **3 terminals**. In each one, first run:
 
 ```bash
 source /opt/ros/humble/setup.bash
-cd ~/enigma_ws
+cd ~/miniqbot
 source install/setup.bash
 ```
 
-### Terminal 1 - Nodo hardware (siempre primero)
+### Terminal 1 - Hardware node (always start this first)
 
 ```bash
 ros2 run dynamixel_control_cpp dynamixel_node
 ```
 
-Este nodo:
-- Abre el puerto serie y se conecta a los motores
-- Lee posicion, velocidad, carga y temperatura 20 veces por segundo
-- Publica todo en el topic `/joint_states`
-- Escucha comandos en `/joint_commands` y mueve los motores
+This node:
+- Opens the serial port and connects to the motors
+- Reads position, velocity, load, and temperature 20 times per second
+- Publishes everything on the `/joint_states` topic
+- Listens for commands on `/joint_commands` and moves the motors
 
-### Terminal 2 - Monitor (dashboard en tiempo real)
+### Terminal 2 - Monitor (real-time dashboard)
 
 ```bash
 ros2 run dynamixel_control_cpp monitor_node
 ```
 
-Veras algo asi:
+You will see something like this:
 
 ```
   ╔═══════════════════════════════════════════════════════════╗
-  ║    MONITOR ROBOT DYNAMIXEL  (3 servos)        frame  42  ║
+  ║    DYNAMIXEL ROBOT MONITOR  (3 servos)        frame  42  ║
   ╚═══════════════════════════════════════════════════════════╝
   ── servo_9   ─────────────────────────────────────────────
     Pos:  58.9°   Vel:     0
-    Load:   2.3% CW  [#-----------------------------]  baja
+    Load:   2.3% CW  [#-----------------------------]  low
 
   ── servo_10  ─────────────────────────────────────────────
     Pos: 149.6°   Vel:     0
-    Load:   1.5% CW  [------------------------------]  baja
+    Load:   1.5% CW  [------------------------------]  low
 
   ── servo_12  ─────────────────────────────────────────────
     Pos: 234.0°   Vel:     0
-    Load:  62.1% CW  [#############-----------------]  media
+    Load:  62.1% CW  [#############-----------------]  medium
 ```
 
-- Barra **verde** = carga baja (motor tranquilo)
-- Barra **amarilla** = carga media (algo de resistencia)
-- Barra **roja** = carga alta (mucha fuerza o bloqueo)
+- **Green** bar = low load (motor is relaxed)
+- **Yellow** bar = moderate load (some resistance)
+- **Red** bar = high load (high force or stall)
 
-### Terminal 3 - Demo (enviar movimientos)
+### Terminal 3 - Demo (send movements)
 
 ```bash
 ros2 run dynamixel_control_cpp demo_node
 ```
 
-Ejecuta una secuencia de movimientos en onda: cada motor se mueve a una
-posicion distinta, creando un patron ondulante. Son 10 pasos, uno cada 3
-segundos.
+Runs a wave motion sequence: each motor moves to a different position,
+creating a wave-like pattern. It performs 10 steps, one every 3 seconds.
 
 ---
 
-## Variables que se leen de cada motor
+## Launch All with One Command
 
-| Variable | Que mide | Para que sirve |
-|----------|----------|----------------|
-| **Position** | Angulo actual (0-300 grados) | Saber donde esta el motor |
-| **Speed** | Velocidad de giro | Saber si se esta moviendo |
-| **Load** | Fuerza/esfuerzo (0-100%) | Detectar contacto, colisiones, resistencia |
-| **Temperature** | Calor interno (en Celsius) | Proteger el motor de sobrecalentamiento |
-
-### Load: la variable mas util para robotica
-
-Si tu robot tiene un pie y quieres saber cuando toca el suelo:
-
-- Motor bajando libre -> Load baja (~5%)
-- Pie toca el suelo -> Load **sube de golpe** (~40-80%)
-- Motor bloqueado -> Load al maximo, velocidad 0
-
----
-
-## Parametros configurables
-
-Los nodos aceptan parametros por linea de comandos:
+Instead of opening 3 terminals, you can use the launch file:
 
 ```bash
-# Cambiar IDs de los servos (ej. para 12 motores)
+source /opt/ros/humble/setup.bash
+cd ~/miniqbot
+source install/setup.bash
+
+ros2 launch dynamixel_control_cpp dynamixel_stack.xml
+```
+
+This starts `dynamixel_node`, `monitor_node`, and `demo_node` simultaneously,
+each with its parameters from the `config/` directory.
+
+---
+
+## How to Run Tests
+
+Unit tests verify the pure logic (conversions, parsing) without needing
+hardware connected:
+
+```bash
+source /opt/ros/humble/setup.bash
+cd ~/miniqbot
+
+# Build with tests enabled
+colcon build --packages-select dynamixel_control_cpp
+
+# Run the tests
+colcon test --packages-select dynamixel_control_cpp
+
+# View results
+colcon test-result --all
+```
+
+You should see something like:
+
+```
+test_ax12_model.gtest.xml: 7 tests, 0 errors, 0 failures, 0 skipped
+```
+
+If all tests pass, the AX-12 logic is working correctly.
+
+---
+
+## Variables Read from Each Motor
+
+| Variable | What it measures | What it is useful for |
+|----------|-----------------|----------------------|
+| **Position** | Current angle (0–300 degrees) | Knowing where the motor is |
+| **Speed** | Rotation velocity | Knowing if it is moving |
+| **Load** | Force/effort (0–100%) | Detecting contact, collisions, resistance |
+| **Temperature** | Internal heat (Celsius) | Protecting the motor from overheating |
+
+### Load: the most useful variable for robotics
+
+If your robot has a foot and you want to know when it touches the ground:
+
+- Motor lowering freely → load is low (~5%)
+- Foot touches the ground → load **jumps suddenly** (~40–80%)
+- Motor stalled → load at maximum, velocity 0
+
+---
+
+## Configurable Parameters
+
+The nodes accept parameters via command line:
+
+```bash
+# Change servo IDs (e.g., for 12 motors)
 ros2 run dynamixel_control_cpp dynamixel_node \
   --ros-args -p servo_ids:="[1,2,3,4,5,6,7,8,9,10,11,12]"
 
-# Cambiar puerto o baudrate
+# Change port or baud rate
 ros2 run dynamixel_control_cpp dynamixel_node \
   --ros-args -p port:="/dev/ttyACM0" -p baudrate:=57600
 
-# Cambiar velocidad de lectura (Hz)
+# Change read frequency (Hz)
 ros2 run dynamixel_control_cpp dynamixel_node \
   --ros-args -p publish_rate_hz:=50.0
 
-# Ajustar compliance (ver seccion abajo)
+# Adjust compliance (see section below)
 ros2 run dynamixel_control_cpp dynamixel_node \
   --ros-args -p compliance_margin:=4 -p compliance_slope:=64
 
-# La demo tambien acepta IDs y numero de pasos
+# The demo also accepts IDs and step count
 ros2 run dynamixel_control_cpp demo_node \
   --ros-args -p servo_ids:="[1,2,3,4,5,6,7,8,9,10,11,12]" -p total_steps:=20
 ```
 
-### Compliance: evitar que los motores tiemblen
+### Compliance: preventing motor oscillation
 
-El AX-12 usa un sistema llamado **Compliance** para mantener su posicion.
-Tiene dos ajustes clave:
+The AX-12 uses a system called **Compliance** to hold its position.
+It has two key settings:
 
-- **Compliance Margin**: zona muerta alrededor del goal (en unidades de
-  posicion, ~0.29 grados cada una). Si el error esta dentro del margin,
-  el motor no intenta corregir. Default de fabrica = 1 (muy ajustado).
-- **Compliance Slope**: que tan agresivo corrige cuando el error supera el
-  margin. Valores bajos = agresivo, valores altos = suave.
-  Default de fabrica = 32.
+- **Compliance Margin**: dead zone around the goal (in position units,
+  ~0.29 degrees each). If the error is within the margin,
+  the motor does not try to correct. Factory default = 1 (very tight).
+- **Compliance Slope**: how aggressively the motor corrects when the error
+  exceeds the margin. Low values = aggressive, high values = smooth.
+  Factory default = 32.
 
-Con los defaults de fabrica, los motores pueden **temblar/oscilar** porque
-intentan corregir errores de 0.3 grados de forma agresiva. Esto es
-especialmente notorio en motores con algo de desgaste o bajo carga.
+With factory defaults, the motors can **oscillate/vibrate** because they
+try to correct 0.3-degree errors aggressively. This is especially
+noticeable in worn motors or under load.
 
-El `dynamixel_node` configura por defecto `margin=4` y `slope=64` que dan
-un comportamiento suave y estable. Puedes ajustarlos segun tu necesidad:
+The `dynamixel_node` configures `margin=4` and `slope=64` by default, which
+provide smooth and stable behavior. You can adjust them as needed:
 
-| Caso | margin | slope | Resultado |
-|------|--------|-------|-----------|
-| Motor tiembla mucho | 8 | 128 | Muy suave, menos precision |
-| Operacion normal | 4 | 64 | Buen balance (default del nodo) |
-| Alta precision | 2 | 32 | Mas preciso pero puede oscilar |
-| Fabrica AX-12 | 1 | 32 | Puede temblar en motores usados |
+| Case | margin | slope | Result |
+|------|--------|-------|--------|
+| Motor vibrates a lot | 8 | 128 | Very smooth, less precision |
+| Normal operation | 4 | 64 | Good balance (node default) |
+| High precision | 2 | 32 | More precise but may oscillate |
+| AX-12 factory | 1 | 32 | May vibrate on worn motors |
 
 ```bash
-# Motores viejos o con desgaste: mas suavidad
+# Worn or old motors: more smoothness
 ros2 run dynamixel_control_cpp dynamixel_node \
   --ros-args -p compliance_margin:=8 -p compliance_slope:=128
 
-# Alta precision (solo si los motores no tiemblan)
+# High precision (only if the motors do not vibrate)
 ros2 run dynamixel_control_cpp dynamixel_node \
   --ros-args -p compliance_margin:=2 -p compliance_slope:=32
 ```
 
 ---
 
-## Programas standalone (sin ROS)
+## Standalone Programs (no ROS)
 
-Para pruebas rapidas sin levantar toda la infraestructura ROS 2:
+For quick tests without starting the full ROS 2 infrastructure:
 
 ```bash
-# Demo directa: mueve 3 motores (IDs 9, 10, 12)
+# Direct demo: moves 3 motors (IDs 9, 10, 12)
 ros2 run dynamixel_control_cpp demo_ax12
 
-# Monitor directo: muestra load/posicion sin ROS topics
+# Direct monitor: shows load/position without ROS topics
 ros2 run dynamixel_control_cpp monitor
 ```
 
-Estos hablan directamente con los motores por puerto serie. Solo puede
-correr uno a la vez (porque el puerto serie no se comparte).
+These talk directly to the motors over serial. Only one can run at a time
+(because the serial port cannot be shared).
 
 ---
 
-## Problemas comunes
+## Common Problems
 
 ### "Error opening serial port"
 
-Otro programa tiene el puerto abierto. Solucion:
+Another program has the port open. Solution:
 
 ```bash
-# Ver quien usa el puerto
+# See who is using the port
 fuser /dev/ttyUSB0
 
-# Matarlo
+# Kill it
 fuser -k /dev/ttyUSB0
 ```
 
-> **Tip:** Si cancelas un programa, usa **Ctrl+C** (lo mata). Nunca **Ctrl+Z**
-> (lo pausa pero deja el puerto bloqueado).
+> **Tip:** If you cancel a program, use **Ctrl+C** (terminates it). Never **Ctrl+Z**
+> (pauses it but leaves the port locked).
 
-### El motor tiembla/oscila
+### Motor vibrates/oscillates
 
-El motor intenta corregir su posicion de forma muy agresiva. Ver la
-seccion **Compliance** mas arriba. Solucion rapida: subir margin y slope.
+The motor is trying to correct its position too aggressively. See the
+**Compliance** section above. Quick fix: increase margin and slope.
 
-### El motor no se mueve (Error 0x02 = Angle Limit)
+### Motor does not move (Error 0x02 = Angle Limit)
 
-El motor esta en "modo rueda". Los nodos lo detectan y corrigen
-automaticamente. Si usas el script standalone, tambien lo maneja.
+The motor is in "wheel mode". The nodes detect this and correct it
+automatically. The standalone scripts also handle it.
 
 ### Error 0x04 = Overheating
 
-El motor esta caliente. Dejalo enfriar unos minutos. Si persiste, revisa
-la ventilacion o reduce el torque.
+The motor is too hot. Let it cool down for a few minutes. If it persists,
+check ventilation or reduce the torque.
 
-### No se cual puerto usar
+### Not sure which port to use
 
 ```bash
-# Ver puertos disponibles
+# List available ports
 ls /dev/ttyUSB* /dev/ttyACM*
 
-# Identificar: desconecta el USB, mira la lista, reconecta y mira que aparecio nuevo
+# Identify: disconnect the USB, check the list, reconnect and see what appeared
 ```
 
-### Permisos del puerto
+### Port permissions
 
 ```bash
-# Solucion permanente (requiere cerrar sesion y volver a entrar)
+# Permanent solution (requires logging out and back in)
 sudo usermod -aG dialout $USER
 
-# Solucion rapida
+# Quick fix
 sudo chmod 666 /dev/ttyUSB0
 ```
 
 ---
 
-## Siguiente paso: tu propio nodo
+## Next Step: Your Own Node
 
-Para agregar comportamiento nuevo (ej. caminar, seguir un objeto), crea un
-nodo que publique en `/joint_commands`. No necesitas tocar el hardware node:
+To add new behavior (e.g., walking, following an object), create a node
+that publishes to `/joint_commands`. You do not need to touch the hardware node:
 
 ```cpp
-// mi_controlador.cpp - esqueleto basico
+// my_controller.cpp - basic skeleton
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 
-class MiControlador : public rclcpp::Node {
+class MyController : public rclcpp::Node {
 public:
-    MiControlador() : Node("mi_controlador") {
-        // Leer estado de los motores
+    MyController() : Node("my_controller") {
+        // Read motor state
         state_sub_ = create_subscription<sensor_msgs::msg::JointState>(
             "/joint_states", 10,
             [this](const sensor_msgs::msg::JointState::SharedPtr msg) {
-                // Aqui puedes leer msg->position, msg->effort (load), etc.
+                // Here you can read msg->position, msg->effort (load), etc.
             });
 
-        // Enviar comandos
+        // Send commands
         cmd_pub_ = create_publisher<sensor_msgs::msg::JointState>(
             "/joint_commands", 10);
     }
 };
 ```
 
-Agrega el ejecutable al `CMakeLists.txt`, compila, y ya tienes un nodo
-nuevo que controla tu robot sin modificar nada del codigo existente.
+Add the executable to `CMakeLists.txt`, build, and you have a new node
+that controls your robot without modifying any existing code.
