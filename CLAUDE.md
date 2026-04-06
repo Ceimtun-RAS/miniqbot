@@ -66,9 +66,19 @@ demo_node ──► /joint_commands ──► dynamixel_node ──► /joint_st
 3. Add target to `install(TARGETS ...)` block
 4. If using a new ROS 2 dependency: add `<depend>` in `package.xml` and `find_package()` in `CMakeLists.txt` (these must match)
 
-## Git Workflow
+## Git Workflow (Mandatory)
 
-Never commit directly to `main`. Always create a feature branch, make your changes there, and merge back into `main` when the work is complete.
+This workflow is mandatory for all changes. Never commit directly to `master`. Every change, no matter how small, must go through the full cycle:
+
+1. **Create a feature branch** from `master`: `git checkout -b <type>/<short-description> master`
+2. **Make commits** on the branch using Conventional Commits (see below)
+3. **Push the branch** to remote: `git push -u origin <branch-name>`
+4. **Open a Pull Request** on GitHub
+5. **Review the PR** before merging (check the diff, verify nothing unintended is included)
+6. **Merge the PR** after review passes
+7. **Delete the feature branch** after merging (both remote and local)
+
+Skipping any of these steps is not allowed. The review step (step 5) is not optional even when working solo.
 
 Branch naming convention uses the same Conventional Commits types as prefix:
 
@@ -78,16 +88,11 @@ fix/<short-description>       e.g. fix/temperature-threshold
 docs/<short-description>      e.g. docs/urdf-tutorial
 refactor/<short-description>  e.g. refactor/extract-servo-class
 test/<short-description>      e.g. test/kinematics-unit-tests
+build/<short-description>     e.g. build/add-nav-msgs-dep
+chore/<short-description>     e.g. chore/update-gitignore
 ```
 
-Workflow:
-1. Create a branch from `main`: `git checkout -b feat/my-feature main`
-2. Make commits on the branch (following the commit practices below)
-3. Push the branch and open a Pull Request for review
-4. Merge into `main` after review (or directly if working solo)
-5. Delete the branch after merging
-
-## Commit Practices
+## Commit Practices (Mandatory)
 
 All commits must follow the Conventional Commits specification. Write commit messages in clear, easy-to-understand language that provides context about why the change was made, not just what changed.
 
