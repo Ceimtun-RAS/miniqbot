@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+<!-- Keep in sync with: AGENTS.md, .cursorrules, .github/copilot-instructions.md -->
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
