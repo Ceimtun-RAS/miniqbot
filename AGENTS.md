@@ -1,1 +1,221 @@
-CLAUDE.md
+# AGENTS.md
+
+<!-- This file is a hard copy of CLAUDE.md. Keep in sync with: CLAUDE.md, .cursorrules, .github/copilot-instructions.md -->
+
+This file provides guidance to AI coding agents when working with code in this repository.
+
+## Project Overview
+
+MiniQ-bot (Proyecto ENIGMA) is a quadruped robot developed by the Ceimtun RAS group at Universidad Nacional de Colombia. The goal is to build a functional quadruped prototype capable of at least two movement routines on different terrain types.
+
+Key specs:
+- 4 legs, 3 DOF each (12 Dynamixel AX-12A servos total)
+- Minimum 2kg load capacity (own weight), each leg must support >0.5kg
+- Impact-resistant 3D-printed structure
+- Movement reaction time under 3 seconds
+- LIDAR perception planned for autonomous navigation
+- Target platform: ROS 2 on Ubuntu, C++ for all control nodes
+
+## Build and Run
+
+```bash
+# Source ROS 2 (required in every terminal)
+source /opt/ros/humble/setup.bash
+
+# Build (from repo root)
+colcon build
+
+# Build single package
+colcon build --packages-select dynamixel_control_cpp
+
+# Source workspace (required after every build, in every terminal)
+source install/setup.bash
+
+# Run the system (each in a separate terminal)
+ros2 run dynamixel_control_cpp dynamixel_node    # hardware driver
+ros2 run dynamixel_control_cpp monitor_node      # terminal dashboard
+ros2 run dynamixel_control_cpp demo_node         # motion demo
+```
+
+## Architecture
+
+Only `dynamixel_node` communicates with physical servos. All other nodes interact exclusively through ROS 2 topics. This isolation is a hard rule: never add direct hardware access to non-driver nodes.
+
+```
+demo_node ──► /joint_commands ──► dynamixel_node ──► /joint_states ──► monitor_node
+                                       │
+                                  /dev/ttyUSB0
+                                  AX-12A servos (Protocol 1.0, 1Mbps)
+```
+
+**Topics:**
+- `/joint_states` (sensor_msgs/JointState) published at 20 Hz: position (degrees), velocity (raw), effort (load %)
+- `/joint_commands` (sensor_msgs/JointState): goal positions in degrees
+
+**Servo naming convention:** `servo_<id>` (e.g., `servo_9`). ID is parsed from the name via `rfind('_')`.
+
+## Hardware
+
+- Dynamixel AX-12A servos, Protocol 1.0
+- Position range: 0-1023 raw units (0-300 degrees)
+- Serial: `/dev/ttyUSB0` at 1,000,000 baud (configurable via ROS parameters)
+- AX-12 register constants are in the `ax12` namespace in `dynamixel_node.cpp`
+
+## Adding a New Node
+
+1. Create `.cpp` in `src/dynamixel_control_cpp/src/`
+2. Add `add_executable()` and `ament_target_dependencies()` in `CMakeLists.txt`
+3. Add target to `install(TARGETS ...)` block
+4. If using a new ROS 2 dependency: add `<depend>` in `package.xml` and `find_package()` in `CMakeLists.txt` (these must match)
+
+## Git Workflow (Mandatory)
+
+This workflow is mandatory for all changes. Never commit directly to `master`. Every change, no matter how small, must go through the full cycle:
+
+1. **Create a feature branch** from `master`: `git checkout -b <type>/<short-description> master`
+2. **Make commits** on the branch using Conventional Commits (see below)
+3. **Push the branch** to remote: `git push -u origin <branch-name>`
+4. **Open a Pull Request** on GitHub
+5. **Review the PR** before merging (check the diff, verify nothing unintended is included)
+6. **Merge the PR** after review passes
+7. **Delete the feature branch** after merging (both remote and local)
+
+Skipping any of these steps is not allowed. The review step (step 5) is not optional even when working solo.
+
+Branch naming convention uses the same Conventional Commits types as prefix:
+
+```
+feat/<short-description>      e.g. feat/sync-read
+fix/<short-description>       e.g. fix/temperature-threshold
+docs/<short-description>      e.g. docs/urdf-tutorial
+refactor/<short-description>  e.g. refactor/extract-servo-class
+test/<short-description>      e.g. test/kinematics-unit-tests
+build/<short-description>     e.g. build/add-nav-msgs-dep
+chore/<short-description>     e.g. chore/update-gitignore
+```
+
+## Commit Practices (Mandatory)
+
+All commits must follow the Conventional Commits specification. Write commit messages in clear, easy-to-understand language that provides context about why the change was made, not just what changed.
+
+Format: `<type>(<scope>): <description>`
+
+Types:
+- `feat`: a new feature or capability
+- `fix`: a bug fix
+- `docs`: documentation changes only
+- `refactor`: code restructuring without changing behavior
+- `test`: adding or updating tests
+- `build`: changes to build system or dependencies (CMakeLists.txt, package.xml)
+- `chore`: maintenance tasks (gitignore, CI config)
+
+Examples:
+- `feat(dynamixel): add SyncRead for atomic multi-servo state reads`
+- `fix(monitor_node): validate JointState array sizes before access`
+- `docs: add ROS 2 beginner tutorial for new team members`
+- `build(dynamixel_control_cpp): add nav_msgs dependency for odometry`
+
+The description should explain the purpose, not repeat the diff. Prefer `add temperature threshold parameter` over `change line 134 in dynamixel_node.cpp`.
+
+## Project Roadmap
+
+The development follows this sequence:
+
+1. Research quadruped kinematics (videos, URDF examples)
+2. Single-leg simulation (Matlab/Python or skip to URDF)
+3. Create/adapt URDF model for MiniQ-bot
+4. Select initial gait pattern (start with walk/"paso")
+5. 3D print and test single leg prototype
+6. Assemble leg, adjust for friction/weight/motor clearance
+7. Test leg strength, speed, and load capacity
+8. Partial robot assembly, verify interference with Dynamixel Wizard
+9. Integrate ROS 2 control with movement patterns and kinematic models
+10. Implement 3-support walking gait on flat terrain, then evaluate other gaits
+
+---
+
+## ROS 2 Best Practices
+
+All code in this repository must follow these rules. Based on guidelines from
+[Henki Robotics](https://github.com/henki-robotics/henki_ros2_best_practices).
+
+### Nodes
+
+- Build ROS 2 Nodes to have a single responsibility.
+- Separate application logic into its own class or library, keeping ROS 2 nodes focused solely on communication. This improves code clarity, testability, and maintainability.
+
+### Launch Files
+
+- Generate launch files in `launch` folder.
+- Prefer XML launch format. Python launch files are not intended to be used as the launch front-end, but can be still used if needed for flexibility.
+- Avoid passing or hardcoding node parameters in launch files; use config files instead.
+
+### Parameters and Config Files
+
+- Store ROS node parameters in YAML files under the `config` folder.
+- Treat package-level YAML files as "default" parameters. Users should not modify these files directly. Instead, they can override parameters in their own copies.
+- If parameters are expected to be changed in runtime, make the parameters dynamic by defining parameter callbacks.
+
+### Logging
+
+- Use ROS 2 logger instead of `print()` and `std::cout` statements.
+- Use relevant log levels to avoid log noise:
+  - `INFO`: System operates normally, logged for informational purposes.
+  - `WARN`: Unexpected, but recoverable condition. Might require action.
+  - `ERROR`: Critical failure. System no longer operates correctly. Requires immediate action.
+- Avoid log spam. A usual mistake is to add logs on high-frequency callbacks, which flood the logs. For these cases, prefer throttled logs.
+
+### Message Interfaces
+
+- Aim to reuse existing message interfaces from common_interfaces: geometry_msgs, sensor_msgs, nav_msgs, tf2_msgs.
+- If there isn't a viable existing message type, create a custom message interface.
+- Custom message interfaces should be in their own packages with `_msgs` suffix. This allows easy message reuse without depending on the full package.
+- Avoid using primitive type messages from std_msgs or example_interfaces (Float32, Bool, String) as they are meant only for quick prototyping. Use a custom message with semantic meaning instead.
+  - This doesn't apply to general messages from std_msgs, such as Header.
+- Enums in message interfaces can be simulated with constants.
+
+### Actions and Services
+
+- Use services only for very fast executing tasks (less than a second), such as requesting or setting a state. Use actions for tasks that take time to execute, can have multiple error cases, or may require cancellation.
+- Prefer enum-style error codes instead of string messages when an action can fail for multiple reasons. This allows clients to reliably parse errors and enables user-friendly messages.
+
+### Code Style
+
+- Refer to the official ROS 2 code style guide.
+- Follow the existing project coding style for all legacy code to maintain consistency. Apply updated best practices only to new nodes or when refactoring code.
+
+### Performance
+
+- Prefer C++ over Python for performance-critical nodes with high-frequency control loops and high-bandwidth data. Python works well for tooling, high-level orchestration, testing, and prototyping.
+- Use C++ composable nodes with intra-process communication enabled to pass large data such as images and point clouds between nodes. This avoids large memory and DDS overhead.
+
+### Executors and Callback Groups
+
+- Prefer `SingleThreadedExecutor` over `MultiThreadedExecutor` where possible. Single threaded applications are usually cleaner, easier to test, have deterministic execution order, and have a lower performance impact.
+  - It can be tempting to use MultiThreadedExecutor for any node to allow synchronous communication inside other callbacks. This can often be avoided with good Node design or asynchronous communication.
+  - For applications that truly require multi-threading, MultiThreadedExecutor is a great option.
+
+### Dependencies
+
+- Always define ROS 2 package dependencies on package-level.
+  - Use `package.xml` to automatically install dependencies using `rosdep`.
+  - If a package isn't available in rosdep, prefer to make a PR for rosdistro.
+  - Rosdep doesn't support exact version tagging. If you require a specific version of a Python package, use `requirements.txt`.
+- If the project requires a specific version of external dependencies to be built from source, use `vcstool` with `.repos` files.
+  - Use an exact version of the repository (commit hash or tag) to avoid regressions.
+- Do not rebuild external ROS 2 packages just to change configuration or launch files. Instead, make a copy of the launch and config files in your workspace and modify them there.
+
+### Documentation
+
+- Document each ROS package with a `README.md` that includes:
+  - Short description and overview
+  - Usage
+  - API: Topics, Services, and Actions
+  - Parameters with type, description, and default value
+
+### Testing
+
+- At minimum, write thorough unit tests for core application logic, using mocks where appropriate to isolate the tested functionality. If the application logic is well-separated from the ROS 2 nodes, the nodes themselves do not require unit tests.
+- Test ROS 2 nodes, including their communication behavior, as part of integration testing.
+- Aim for high test coverage (90-100%).
+- Avoid using arbitrary sleeps in tests, as they can make tests non-deterministic and flaky. Instead of sleeping to wait for a ROS message, use synchronization mechanisms or wait for the expected result with a proper timeout.
