@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Parameter defaults live under share/dynamixel_control_cpp/config/*.yaml -->
+  <node pkg="dynamixel_control_cpp" exec="dynamixel_node" name="dynamixel_node" output="screen">
+    <param from="$(find-pkg-share dynamixel_control_cpp)/config/dynamixel_node.yaml"/>
+  </node>
+
+  <node pkg="dynamixel_control_cpp" exec="monitor_node" name="monitor_node" output="screen">
+    <param from="$(find-pkg-share dynamixel_control_cpp)/config/monitor_node.yaml"/>
+  </node>
+
+  <node pkg="dynamixel_control_cpp" exec="demo_node" name="demo_node" output="screen">
+    <param from="$(find-pkg-share dynamixel_control_cpp)/config/demo_node.yaml"/>
+  </node>
+</launch>

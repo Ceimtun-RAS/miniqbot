@@ -1,0 +1,10 @@
+# Default parameters for dynamixel_node (override with user file or CLI).
+dynamixel_node:
+  ros__parameters:
+    port: "/dev/ttyUSB0"
+    baudrate: 1000000
+    servo_ids: [9, 10, 12]
+    publish_rate_hz: 20.0
+    compliance_margin: 4
+    compliance_slope: 64
+    temp_warn_c: 55

@@ -8,6 +8,8 @@ This file provides guidance to AI coding agents when working with code in this r
 
 MiniQ-bot (Proyecto ENIGMA) is a quadruped robot developed by the Ceimtun RAS group at Universidad Nacional de Colombia. The goal is to build a functional quadruped prototype capable of at least two movement routines on different terrain types.
 
+This project will be presented to international authorities such as IEEE and will serve as the foundation for a scientific paper following strict academic and research standards. All code, documentation, comments, and log messages must be written in English.
+
 Key specs:
 - 4 legs, 3 DOF each (12 Dynamixel AX-12A servos total)
 - Minimum 2kg load capacity (own weight), each leg must support >0.5kg

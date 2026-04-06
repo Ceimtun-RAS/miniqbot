@@ -1,0 +1,5 @@
+demo_node:
+  ros__parameters:
+    servo_ids: [9, 10, 12]
+    total_steps: 10
+    timer_period_sec: 3
