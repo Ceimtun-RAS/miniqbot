@@ -70,9 +70,9 @@ demo_node ──► /joint_commands ──► dynamixel_node ──► /joint_st
 
 ## Git Workflow (Mandatory)
 
-This workflow is mandatory for all changes. Never commit directly to `master`. Every change, no matter how small, must go through the full cycle:
+This workflow is mandatory for all changes. Never commit directly to `main`. Every change, no matter how small, must go through the full cycle:
 
-1. **Create a feature branch** from `master`: `git checkout -b <type>/<short-description> master`
+1. **Create a feature branch** from `main`: `git checkout -b <type>/<short-description> main`
 2. **Make commits** on the branch using Conventional Commits (see below)
 3. **Push the branch** to remote: `git push -u origin <branch-name>`
 4. **Open a Pull Request** on GitHub
