@@ -1,0 +1,4 @@
+# Colcon build artifacts (generated, never commit)
+build/
+install/
+log/
