@@ -9,6 +9,7 @@ using dynamixel_control_cpp::ax12::decode_present_speed;
 using dynamixel_control_cpp::ax12::degrees_to_goal_position;
 using dynamixel_control_cpp::ax12::parse_servo_id;
 using dynamixel_control_cpp::ax12::raw_position_to_degrees;
+using dynamixel_control_cpp::ax12::wheel_speed_to_raw;
 using dynamixel_control_cpp::demo_angle_degrees;
 using dynamixel_control_cpp::MonitorDashboard;
 
@@ -31,6 +32,19 @@ TEST(Ax12Model, DecodeSpeedSign)
   EXPECT_DOUBLE_EQ(decode_present_speed(0x000), 0.0);
   EXPECT_DOUBLE_EQ(decode_present_speed(0x3FF), static_cast<double>(0x3FF));
   EXPECT_DOUBLE_EQ(decode_present_speed(0x400 | 100), -100.0);
+}
+
+TEST(Ax12Model, WheelSpeedToRaw)
+{
+  EXPECT_EQ(wheel_speed_to_raw(0.0), 0u);
+  EXPECT_EQ(wheel_speed_to_raw(100.0), 100u);
+  EXPECT_EQ(wheel_speed_to_raw(-100.0), static_cast<uint16_t>(0x400U | 100U));
+}
+
+TEST(Ax12Model, WheelSpeedToRawClampsMagnitude)
+{
+  EXPECT_EQ(wheel_speed_to_raw(2000.0), 1023u);
+  EXPECT_EQ(wheel_speed_to_raw(-2000.0), static_cast<uint16_t>(0x400U | 1023U));
 }
 
 TEST(Ax12Model, DecodeLoadPercentSign)
