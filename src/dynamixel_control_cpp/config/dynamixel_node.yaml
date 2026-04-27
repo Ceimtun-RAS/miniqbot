@@ -3,7 +3,8 @@ dynamixel_node:
   ros__parameters:
     port: "/dev/ttyUSB0"
     baudrate: 1000000
-    servo_ids: [9, 10, 12]
+    servo_ids: [9, 10]
+    wheel_servo_ids: [9]
     publish_rate_hz: 20.0
     compliance_margin: 4
     compliance_slope: 64

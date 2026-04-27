@@ -127,6 +127,7 @@ This node:
 - Reads position, velocity, load, and temperature 20 times per second
 - Publishes everything on the `/joint_states` topic
 - Listens for commands on `/joint_commands` and moves the motors
+- Treats IDs in `wheel_servo_ids` as continuous wheels controlled by velocity
 
 ### Terminal 2 - Monitor (real-time dashboard)
 
@@ -164,7 +165,8 @@ ros2 run dynamixel_control_cpp demo_node
 ```
 
 Runs a wave motion sequence: each motor moves to a different position,
-creating a wave-like pattern. It performs 10 steps, one every 3 seconds.
+creating a wave-like pattern for joint servos. Wheel servos spin using the
+configured `wheel_speed_raw` value. It performs 10 steps, one every 3 seconds.
 
 ---
 
@@ -242,6 +244,10 @@ The nodes accept parameters via command line:
 ros2 run dynamixel_control_cpp dynamixel_node \
   --ros-args -p servo_ids:="[1,2,3,4,5,6,7,8,9,10,11,12]"
 
+# Configure ID 9 as a wheel and ID 10 as a joint
+ros2 run dynamixel_control_cpp dynamixel_node \
+  --ros-args -p servo_ids:="[9,10]" -p wheel_servo_ids:="[9]"
+
 # Change port or baud rate
 ros2 run dynamixel_control_cpp dynamixel_node \
   --ros-args -p port:="/dev/ttyACM0" -p baudrate:=57600
@@ -257,7 +263,19 @@ ros2 run dynamixel_control_cpp dynamixel_node \
 # The demo also accepts IDs and step count
 ros2 run dynamixel_control_cpp demo_node \
   --ros-args -p servo_ids:="[1,2,3,4,5,6,7,8,9,10,11,12]" -p total_steps:=20
+
+# Demo with ID 9 as a wheel and ID 10 as a joint
+ros2 run dynamixel_control_cpp demo_node \
+  --ros-args -p servo_ids:="[9,10]" -p wheel_servo_ids:="[9]" -p wheel_speed_raw:=200
 ```
+
+### Joint mode vs wheel mode
+
+- **Joint servos** receive `position` commands in degrees and move to a fixed angle.
+- **Wheel servos** receive `velocity` commands as signed AX-12 raw speed units.
+  Positive speed rotates counter-clockwise, negative speed rotates clockwise.
+
+By default, this package treats **ID 9 as a wheel** and **ID 10 as a joint**.
 
 ### Compliance: preventing motor oscillation
 
@@ -338,8 +356,9 @@ The motor is trying to correct its position too aggressively. See the
 
 ### Motor does not move (Error 0x02 = Angle Limit)
 
-The motor is in "wheel mode". The nodes detect this and correct it
-automatically. The standalone scripts also handle it.
+The motor mode does not match the command type. Joint servos need angle limits
+configured for position mode. Wheel servos need both angle limits set to `0`.
+Set `wheel_servo_ids` so the driver configures each servo correctly.
 
 ### Error 0x04 = Overheating
 

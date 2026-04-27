@@ -24,6 +24,7 @@
 #define DYNAMIXEL_CONTROL_CPP__AX12_MODEL_HPP_
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <string>
 
@@ -51,6 +52,7 @@ constexpr uint8_t CCW_COMPLIANCE_MARGIN = 27;  // position dead-band, CCW side
 constexpr uint8_t CW_COMPLIANCE_SLOPE = 28;    // how aggressively the motor corrects, CW
 constexpr uint8_t CCW_COMPLIANCE_SLOPE = 29;   // how aggressively the motor corrects, CCW
 constexpr uint8_t GOAL_POSITION = 30;       // target position (2 bytes, 0–1023)
+constexpr uint8_t MOVING_SPEED = 32;        // goal speed (2 bytes; direction bit in wheel mode)
 constexpr uint8_t PRESENT_POSITION = 36;    // current position (2 bytes, 0–1023)
 constexpr uint8_t PRESENT_SPEED = 38;       // current speed (2 bytes, see encoding above)
 constexpr uint8_t PRESENT_LOAD = 40;        // current load (2 bytes, see encoding above)
@@ -86,6 +88,20 @@ inline uint16_t degrees_to_goal_position(double degrees)
   const double raw = degrees * DEG_TO_POS;
   const auto clamped = std::clamp(raw, 0.0, 1023.0);
   return static_cast<uint16_t>(clamped + 0.5);   // round to nearest integer
+}
+
+/// Convert a signed wheel speed command to the AX-12A wheel-mode raw value.
+///
+/// Positive values command counter-clockwise rotation; negative values command
+/// clockwise rotation by setting bit 10. Magnitudes are raw AX-12 speed units.
+inline uint16_t wheel_speed_to_raw(double speed)
+{
+  const double magnitude = std::clamp(std::abs(speed), 0.0, 1023.0);
+  const auto raw_magnitude = static_cast<uint16_t>(magnitude + 0.5);
+  if (speed < 0.0) {
+    return static_cast<uint16_t>(0x400U | raw_magnitude);
+  }
+  return raw_magnitude;
 }
 
 /// Decode the AX-12A "present speed" register.
