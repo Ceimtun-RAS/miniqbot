@@ -1,8 +1,12 @@
 #include "dynamixel_control_cpp/ax12_model.hpp"
 #include "dynamixel_control_cpp/demo_motion.hpp"
+#include "dynamixel_control_cpp/hold_command.hpp"
 #include "dynamixel_control_cpp/monitor_display.hpp"
 
 #include <gtest/gtest.h>
+
+#include <sstream>
+#include <vector>
 
 using dynamixel_control_cpp::ax12::decode_load_percent;
 using dynamixel_control_cpp::ax12::decode_present_speed;
@@ -11,7 +15,10 @@ using dynamixel_control_cpp::ax12::parse_servo_id;
 using dynamixel_control_cpp::ax12::raw_position_to_degrees;
 using dynamixel_control_cpp::ax12::wheel_speed_to_raw;
 using dynamixel_control_cpp::demo_angle_degrees;
+using dynamixel_control_cpp::build_hold_command;
+using dynamixel_control_cpp::MonitorServoDiagnostics;
 using dynamixel_control_cpp::MonitorDashboard;
+using dynamixel_control_cpp::MonitorServoDefinition;
 
 TEST(Ax12Model, RawPositionToDegrees)
 {
@@ -72,6 +79,68 @@ TEST(MonitorDisplay, BarAndLabel)
 {
   EXPECT_FALSE(MonitorDashboard::bar(10.0, 10).empty());
   EXPECT_NE(MonitorDashboard::load_label(80.0), MonitorDashboard::load_label(10.0));
+}
+
+TEST(MonitorDisplay, ShowsConfiguredServoModesAndMissingData)
+{
+  sensor_msgs::msg::JointState msg;
+  msg.name.push_back("servo_9");
+  msg.position.push_back(42.0);
+  msg.velocity.push_back(120.0);
+  msg.effort.push_back(25.0);
+
+  const std::vector<MonitorServoDefinition> servos = {
+    {9, true},
+    {10, false},
+  };
+
+  std::ostringstream output;
+  int frame_count = 0;
+  MonitorDashboard dashboard;
+  dashboard.render_frame(output, msg, frame_count, servos);
+
+  const auto text = output.str();
+  EXPECT_NE(text.find("servo_9"), std::string::npos);
+  EXPECT_NE(text.find("wheel"), std::string::npos);
+  EXPECT_NE(text.find("servo_10"), std::string::npos);
+  EXPECT_NE(text.find("joint"), std::string::npos);
+  EXPECT_NE(text.find("no data"), std::string::npos);
+}
+
+TEST(MonitorDisplay, ShowsDiagnosticsTemperatureAndVoltage)
+{
+  sensor_msgs::msg::JointState msg;
+  msg.name.push_back("servo_9");
+  msg.position.push_back(120.0);
+  msg.velocity.push_back(0.0);
+  msg.effort.push_back(55.0);
+
+  const std::vector<MonitorServoDefinition> servos = {
+    {9, false},
+  };
+  const std::vector<MonitorServoDiagnostics> diagnostics = {
+    {9, 48.0, 11.8, "OK"},
+  };
+
+  std::ostringstream output;
+  int frame_count = 0;
+  MonitorDashboard dashboard;
+  dashboard.render_frame(output, msg, frame_count, servos, diagnostics);
+
+  const auto text = output.str();
+  EXPECT_NE(text.find("48.0 C"), std::string::npos);
+  EXPECT_NE(text.find("11.8 V"), std::string::npos);
+  EXPECT_NE(text.find("OK"), std::string::npos);
+}
+
+TEST(HoldCommand, BuildsPositionCommandForJointServosOnly)
+{
+  const auto msg = build_hold_command({9, 10}, {9}, 135.0);
+
+  ASSERT_EQ(msg.name.size(), 1u);
+  EXPECT_EQ(msg.name[0], "servo_10");
+  ASSERT_EQ(msg.position.size(), 1u);
+  EXPECT_DOUBLE_EQ(msg.position[0], 135.0);
 }
 
 int main(int argc, char ** argv)

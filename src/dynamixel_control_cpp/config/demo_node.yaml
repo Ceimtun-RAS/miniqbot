@@ -1,7 +1,0 @@
-demo_node:
-  ros__parameters:
-    servo_ids: [9, 10]
-    wheel_servo_ids: [9]
-    wheel_speed_raw: 200
-    total_steps: 10
-    timer_period_sec: 3

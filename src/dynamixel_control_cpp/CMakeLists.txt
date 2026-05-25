@@ -15,6 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(diagnostic_msgs REQUIRED)
 find_package(dynamixel_sdk REQUIRED)
 
 set(DYNAMIXEL_CPP_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -36,16 +37,20 @@ ament_target_dependencies(monitor dynamixel_sdk)
 
 # --- Nodos ROS 2 ---
 add_executable(dynamixel_node src/dynamixel_node.cpp)
-ament_target_dependencies(dynamixel_node rclcpp sensor_msgs dynamixel_sdk)
+ament_target_dependencies(dynamixel_node rclcpp sensor_msgs diagnostic_msgs dynamixel_sdk)
 target_include_directories(dynamixel_node PRIVATE ${DYNAMIXEL_CPP_INCLUDE_DIR})
 
 add_executable(monitor_node src/monitor_node.cpp)
-ament_target_dependencies(monitor_node rclcpp sensor_msgs)
+ament_target_dependencies(monitor_node rclcpp sensor_msgs diagnostic_msgs)
 target_include_directories(monitor_node PRIVATE ${DYNAMIXEL_CPP_INCLUDE_DIR})
 
 add_executable(demo_node src/demo_node.cpp)
 ament_target_dependencies(demo_node rclcpp sensor_msgs)
 target_include_directories(demo_node PRIVATE ${DYNAMIXEL_CPP_INCLUDE_DIR})
+
+add_executable(hold_test_node src/hold_test_node.cpp)
+ament_target_dependencies(hold_test_node rclcpp sensor_msgs)
+target_include_directories(hold_test_node PRIVATE ${DYNAMIXEL_CPP_INCLUDE_DIR})
 
 # 3) Install
 install(DIRECTORY include/ DESTINATION include)
@@ -57,6 +62,7 @@ install(TARGETS
   dynamixel_node
   monitor_node
   demo_node
+  hold_test_node
   publisher_node
   subscriber_node
   DESTINATION lib/${PROJECT_NAME}

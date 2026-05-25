@@ -12,7 +12,7 @@
 //      the formula in demo_motion.hpp and publishes them.
 //   3. After all steps are done, shuts down automatically.
 //
-// PARAMETERS (see config/demo_node.yaml):
+// PARAMETERS (see config/dynamixel_stack.yaml):
 //   - servo_ids:        Which servos to command (default: [9, 10])
 //   - wheel_servo_ids:  Which servos receive velocity commands (default: [9])
 //   - wheel_speed_raw:  AX-12 raw wheel speed magnitude (default: 200)
