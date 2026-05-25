@@ -1,0 +1,33 @@
+# Default parameters for the complete Dynamixel ROS 2 stack.
+# Motor IDs and wheel/joint modes are shared by every node to keep one source
+# of truth for the robot topology.
+/**:
+  ros__parameters:
+    servo_ids: [9, 10]
+    wheel_servo_ids: [9]
+
+dynamixel_node:
+  ros__parameters:
+    port: "/dev/ttyUSB0"
+    baudrate: 1000000
+    publish_rate_hz: 20.0
+    compliance_margin: 4
+    compliance_slope: 64
+    temp_warn_c: 55
+
+monitor_node:
+  ros__parameters:
+    joint_states_topic: "/joint_states"
+    servo_diagnostics_topic: "/servo_diagnostics"
+    refresh_rate_hz: 10.0
+
+demo_node:
+  ros__parameters:
+    wheel_speed_raw: 200
+    total_steps: 10
+    timer_period_sec: 3
+
+hold_test_node:
+  ros__parameters:
+    hold_position_deg: 150.0
+    publish_rate_hz: 2.0

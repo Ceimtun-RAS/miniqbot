@@ -17,20 +17,21 @@ Control of Dynamixel AX-12 servo motors from ROS 2 (Humble) in C++.
 
 ```
 src/dynamixel_control_cpp/
-├── config/                         <-- YAML parameters for each node
-│   ├── dynamixel_node.yaml
-│   ├── monitor_node.yaml
-│   └── demo_node.yaml
+├── config/                         <-- YAML parameters for the full stack
+│   └── dynamixel_stack.yaml         <-- Shared topology and node defaults
 ├── include/dynamixel_control_cpp/  <-- Pure logic (no ROS), unit-testable
 │   ├── ax12_model.hpp              <-- AX-12 constants and conversions
 │   ├── demo_motion.hpp             <-- Sinusoidal trajectory formulas
+│   ├── hold_command.hpp            <-- Hold-test command helper
 │   └── monitor_display.hpp         <-- Terminal dashboard rendering
 ├── launch/
-│   └── dynamixel_stack.xml         <-- Launches all 3 nodes with one command
+│   ├── dynamixel_stack.xml         <-- Launches driver, monitor, and demo
+│   └── hold_test_stack.xml         <-- Launches driver, monitor, and hold test
 ├── src/
 │   ├── dynamixel_node.cpp          <-- Hardware node (talks to the motors)
 │   ├── monitor_node.cpp            <-- Monitor node (terminal dashboard)
 │   ├── demo_node.cpp               <-- Demo node (sends movement commands)
+│   ├── hold_test_node.cpp          <-- Static load test node
 │   ├── demo_ax12.cpp               <-- Standalone script (no ROS, direct serial)
 │   ├── monitor.cpp                 <-- Standalone monitor (no ROS)
 │   ├── publisher.cpp               <-- Basic ROS 2 pub/sub example
@@ -126,8 +127,9 @@ This node:
 - Opens the serial port and connects to the motors
 - Reads position, velocity, load, and temperature 20 times per second
 - Publishes everything on the `/joint_states` topic
+- Publishes temperature, voltage, mode, and status on `/servo_diagnostics`
 - Listens for commands on `/joint_commands` and moves the motors
-- Treats IDs in `wheel_servo_ids` as continuous wheels controlled by velocity
+- Treats IDs in `wheel_servo_ids` from `config/dynamixel_stack.yaml` as continuous wheels controlled by velocity
 
 ### Terminal 2 - Monitor (real-time dashboard)
 
@@ -135,21 +137,26 @@ This node:
 ros2 run dynamixel_control_cpp monitor_node
 ```
 
-You will see something like this:
+This node subscribes to `/joint_states` and `/servo_diagnostics`, then redraws
+the dashboard at its own configured `refresh_rate_hz`, so terminal rendering
+does not run inside the message callback. You will see something like this:
 
 ```
   ╔═══════════════════════════════════════════════════════════╗
   ║    DYNAMIXEL ROBOT MONITOR  (3 servos)        frame  42  ║
   ╚═══════════════════════════════════════════════════════════╝
   ── servo_9   ─────────────────────────────────────────────
+    Mode: wheel    Data: active    Health: OK    Temp: 38.0 C    Volt: 11.8 V
     Pos:  58.9°   Vel:     0
     Load:   2.3% CW  [#-----------------------------]  low
 
   ── servo_10  ─────────────────────────────────────────────
+    Mode: joint    Data: active    Health: OK    Temp: 40.0 C    Volt: 11.8 V
     Pos: 149.6°   Vel:     0
     Load:   1.5% CW  [------------------------------]  low
 
   ── servo_12  ─────────────────────────────────────────────
+    Mode: joint    Data: active    Health: OK    Temp: 42.0 C    Volt: 11.7 V
     Pos: 234.0°   Vel:     0
     Load:  62.1% CW  [#############-----------------]  medium
 ```
@@ -184,6 +191,16 @@ ros2 launch dynamixel_control_cpp dynamixel_stack.xml
 
 This starts `dynamixel_node`, `monitor_node`, and `demo_node` simultaneously,
 each with its parameters from the `config/` directory.
+
+For a static load/hold test instead of the wave demo, run:
+
+```bash
+ros2 launch dynamixel_control_cpp hold_test_stack.xml
+```
+
+This starts `dynamixel_node`, `monitor_node`, and `hold_test_node`. Do not run
+`demo_node` and `hold_test_node` at the same time because both publish movement
+commands to `/joint_commands`.
 
 ---
 
@@ -224,6 +241,8 @@ If all tests pass, the AX-12 logic is working correctly.
 | **Speed** | Rotation velocity | Knowing if it is moving |
 | **Load** | Force/effort (0–100%) | Detecting contact, collisions, resistance |
 | **Temperature** | Internal heat (Celsius) | Protecting the motor from overheating |
+| **Voltage** | Supply voltage at the servo | Detecting power drops under load |
+| **Mode** | Wheel or joint control mode | Checking the configured behavior |
 
 ### Load: the most useful variable for robotics
 
@@ -236,6 +255,36 @@ If your robot has a foot and you want to know when it touches the ground:
 ---
 
 ## Configurable Parameters
+
+Motor IDs, wheel/joint modes, and node defaults live in one shared file:
+
+```yaml
+# config/dynamixel_stack.yaml
+/**:
+  ros__parameters:
+    servo_ids: [9, 10]
+    wheel_servo_ids: [9]
+
+dynamixel_node:
+  ros__parameters:
+    port: "/dev/ttyUSB0"
+    baudrate: 1000000
+
+monitor_node:
+  ros__parameters:
+    joint_states_topic: "/joint_states"
+    servo_diagnostics_topic: "/servo_diagnostics"
+    refresh_rate_hz: 10.0
+
+hold_test_node:
+  ros__parameters:
+    hold_position_deg: 150.0
+    publish_rate_hz: 2.0
+```
+
+The launch file loads this same YAML into `dynamixel_node`, `demo_node`, and
+`monitor_node`, keeping the servo topology as a single source of truth while
+still giving each node its own parameter namespace.
 
 The nodes accept parameters via command line:
 
@@ -267,6 +316,10 @@ ros2 run dynamixel_control_cpp demo_node \
 # Demo with ID 9 as a wheel and ID 10 as a joint
 ros2 run dynamixel_control_cpp demo_node \
   --ros-args -p servo_ids:="[9,10]" -p wheel_servo_ids:="[9]" -p wheel_speed_raw:=200
+
+# Static hold test for joint servos
+ros2 run dynamixel_control_cpp hold_test_node \
+  --ros-args -p hold_position_deg:=150.0 -p publish_rate_hz:=2.0
 ```
 
 ### Joint mode vs wheel mode

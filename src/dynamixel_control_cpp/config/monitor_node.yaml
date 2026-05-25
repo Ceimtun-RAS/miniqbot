@@ -1,3 +1,0 @@
-monitor_node:
-  ros__parameters:
-    joint_states_topic: "/joint_states"

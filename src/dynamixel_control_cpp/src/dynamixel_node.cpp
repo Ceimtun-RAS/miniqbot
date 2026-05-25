@@ -6,7 +6,8 @@
 //   1. Opens the serial port and initializes all AX-12A servos.
 //   2. Reads servo state (position, speed, load, temperature) at 20 Hz
 //      and publishes it on the /joint_states topic.
-//   3. Listens for goal positions on /joint_commands and writes them to
+//   3. Publishes non-JointState telemetry on /servo_diagnostics.
+//   4. Listens for goal positions on /joint_commands and writes them to
 //      the servos via serial.
 //
 // ARCHITECTURE RULE:
@@ -14,7 +15,7 @@
 //   communicates exclusively through ROS 2 topics. This isolation means
 //   you can test monitor_node or demo_node without any hardware connected.
 //
-// PARAMETERS (see config/dynamixel_node.yaml):
+// PARAMETERS (see config/dynamixel_stack.yaml):
 //   - port:             Serial device path (default: /dev/ttyUSB0)
 //   - baudrate:         Serial speed (default: 1000000)
 //   - servo_ids:        Array of servo IDs to manage (default: [9, 10])
@@ -26,6 +27,9 @@
 
 #include "dynamixel_control_cpp/ax12_model.hpp"
 
+#include "diagnostic_msgs/msg/diagnostic_array.hpp"
+#include "diagnostic_msgs/msg/diagnostic_status.hpp"
+#include "diagnostic_msgs/msg/key_value.hpp"
 #include "dynamixel_sdk/dynamixel_sdk.h"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -86,6 +90,8 @@ public:
     }
 
     state_pub_ = create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
+    diagnostics_pub_ =
+      create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/servo_diagnostics", 10);
 
     cmd_sub_ = create_subscription<sensor_msgs::msg::JointState>(
       "/joint_commands", 10,
@@ -180,30 +186,35 @@ private:
   {
     auto msg = sensor_msgs::msg::JointState();
     msg.header.stamp = now();
+    auto diagnostics_msg = diagnostic_msgs::msg::DiagnosticArray();
+    diagnostics_msg.header.stamp = msg.header.stamp;
 
     for (int id : configured_servo_ids_) {
       uint8_t err = 0;
       uint16_t pos = 0, spd = 0, load = 0;
-      uint8_t temp = 0;
+      uint8_t voltage = 0, temp = 0;
 
       packet_handler_->read2ByteTxRx(port_handler_, id, ax12::reg::PRESENT_POSITION, &pos, &err);
       packet_handler_->read2ByteTxRx(port_handler_, id, ax12::reg::PRESENT_SPEED, &spd, &err);
       packet_handler_->read2ByteTxRx(port_handler_, id, ax12::reg::PRESENT_LOAD, &load, &err);
+      packet_handler_->read1ByteTxRx(port_handler_, id, ax12::reg::PRESENT_VOLTAGE, &voltage, &err);
       packet_handler_->read1ByteTxRx(port_handler_, id, ax12::reg::PRESENT_TEMP, &temp, &err);
 
       msg.name.push_back("servo_" + std::to_string(id));
       msg.position.push_back(ax12::raw_position_to_degrees(pos));
       msg.velocity.push_back(ax12::decode_present_speed(spd));
       msg.effort.push_back(ax12::decode_load_percent(load));
+      diagnostics_msg.status.push_back(make_diagnostic_status(id, voltage, temp));
 
       if (static_cast<int>(temp) > temp_warn_c_) {
         RCLCPP_WARN_THROTTLE(
           get_logger(), *get_clock(), 5000,
-          "[ID %d] Temp alta: %d C", id, static_cast<int>(temp));
+          "[ID %d] High temperature: %d C", id, static_cast<int>(temp));
       }
     }
 
     state_pub_->publish(msg);
+    diagnostics_pub_->publish(diagnostics_msg);
   }
 
   void on_command(const sensor_msgs::msg::JointState::SharedPtr msg)
@@ -289,6 +300,42 @@ private:
     return true;
   }
 
+  diagnostic_msgs::msg::DiagnosticStatus make_diagnostic_status(
+    int id,
+    uint8_t voltage_raw,
+    uint8_t temperature_c) const
+  {
+    auto status = diagnostic_msgs::msg::DiagnosticStatus();
+    status.name = "servo_" + std::to_string(id);
+    status.hardware_id = status.name;
+    status.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+    status.message = "OK";
+
+    if (static_cast<int>(temperature_c) > temp_warn_c_) {
+      status.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
+      status.message = "HIGH_TEMP";
+    }
+
+    status.values.push_back(make_key_value("id", std::to_string(id)));
+    status.values.push_back(make_key_value("mode", is_wheel_servo(id) ? "wheel" : "joint"));
+    status.values.push_back(
+      make_key_value(
+        "temperature_c",
+        std::to_string(static_cast<int>(temperature_c))));
+    status.values.push_back(make_key_value("voltage_v", std::to_string(voltage_raw / 10.0)));
+    return status;
+  }
+
+  static diagnostic_msgs::msg::KeyValue make_key_value(
+    const std::string & key,
+    const std::string & value)
+  {
+    auto pair = diagnostic_msgs::msg::KeyValue();
+    pair.key = key;
+    pair.value = value;
+    return pair;
+  }
+
   std::vector<int> servo_ids_;
   std::vector<int> configured_servo_ids_;
   std::vector<int> wheel_servo_ids_;
@@ -298,6 +345,7 @@ private:
   uint8_t compliance_slope_;
   int temp_warn_c_{55};
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr state_pub_;
+  rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostics_pub_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr cmd_sub_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
