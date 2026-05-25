@@ -19,7 +19,7 @@ class AlertaObstaculos(Node):
         self.bridge = CvBridge()
         
         # Ruta de tu audio
-        self.audio_path = "/home/ieee/Enigma/Enigma_spot/src/media/wowwow.wav"
+        self.audio_path = "/home/ieee/Enigma/miniqbot/Enigma_spot/src/media/wowwow.wav"
         
         # Variable de control para no repetir el audio infinitamente (Hysteresis)
         self.audio_reproduciendo = False
@@ -43,9 +43,9 @@ class AlertaObstaculos(Node):
                 distancia_minima_mm = np.min(profundidades_validas)
                 
                 # --- LÓGICA DE AUDIO (100mm = 10cm) ---
-                if distancia_minima_mm < 200:
+                if distancia_minima_mm < 400:
                     if not self.audio_reproduciendo:
-                        self.get_logger().error(f"🚨 CRÍTICO: Objeto a {distancia_minima_mm / 20.0:.1f} cm")
+                        self.get_logger().error(f"🚨 CRÍTICO: Objeto a {distancia_minima_mm / 10.0:.1f} cm")
                         
                         # Ejecutamos paplay. El '&' al final permite que el audio suene 
                         # en segundo plano sin congelar tu nodo de ROS2.
@@ -55,12 +55,12 @@ class AlertaObstaculos(Node):
                 
                 # Reseteamos el estado cuando el objeto se aleja a más de 15cm
                 # Esto evita que el sonido se dispare mil veces por segundo
-                elif distancia_minima_mm > 250:
+                elif distancia_minima_mm > 400:
                     self.audio_reproduciendo = False
 
                 # Alerta visual preventiva (opcional, a 30cm)
-                elif distancia_minima_mm < 300:
-                    self.get_logger().warn(f"Cuidado: Obstáculo a {distancia_minima_mm / 20.0:.1f} cm")
+                if distancia_minima_mm <600 and distancia_minima_mm >= 400:
+                    self.get_logger().warn(f"Cuidado: Obstáculo a {distancia_minima_mm / 10.0:.1f} cm")
 
         except Exception as e:
             self.get_logger().error(f"Error procesando imagen: {e}")
