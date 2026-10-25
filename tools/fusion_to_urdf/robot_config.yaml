@@ -1,0 +1,134 @@
+# Robot-specific rules used by build_urdf.py to turn the raw Fusion
+# export (MiniQbotExport) into the miniqbot_description package.
+#
+# Everything that depends on how the CAD is modeled lives here, so when the
+# CAD changes (new leg version, renamed parts) this file is the only thing to
+# update. build_urdf.py stops with a clear error if a part or joint
+# named here no longer exists, or if a visible part is not assigned to a link.
+#
+# Units: meters, kilograms, radians (the Fusion export uses cm, converted here).
+
+format_version: 1
+
+# The export must come from this design (checked against export.json).
+source_document_prefix: "Fixed for URDF"
+
+robot_name: miniqbot
+
+# Fusion axes -> ROS axes (REP 103: x forward, y left, z up).
+# In the CAD the robot front is +Z, its left side is +X and up is +Y.
+fusion_to_ros:
+  x: +z
+  y: +x
+  z: +y
+
+# Joint axes closer than this to a main axis are snapped onto it. Small tilts
+# come from imprecise assembly constraints in the CAD (the FL leg is ~4.6 deg off).
+axis_snap_tolerance_deg: 10.0
+
+# Flip every joint axis so it points along +x, +y or +z of the robot. All legs
+# then share one sign convention (positive angle = same motion on every leg).
+# The real servo directions are mapped in the driver, not here.
+normalize_axis_sign: true
+
+# Links. "anchor" is one CAD part of the link; all parts connected to it by
+# rigid joints, rigid groups or "merge_joints" become part of the same link.
+# Leg names: fl = front left, fr = front right, bl = back left, br = back right.
+body:
+  link: body_link
+  anchor: "base_link:1"
+  color: [0.25, 0.25, 0.28, 1.0]
+
+legs:
+  fl:
+    hip:   {anchor: "Soporte1_1:1", joint: "motor1-FL", servo: M1_1}
+    thigh: {anchor: "Soporte2_1:1", joint: "motor2-FL", servo: M2_1}
+    knee:  {anchor: "Pata v12:1",   joint: "Revolute 197", servo: M3_1}
+  fr:
+    hip:   {anchor: "Soporte1_2:1", joint: "motor1-FR", servo: M1_2}
+    thigh: {anchor: "Soporte2_2:1", joint: "motor2-FR", servo: M2_2}
+    knee:  {anchor: "Pata_2:1",     joint: "eje-pata-FR", servo: M3_2}
+  bl:
+    hip:   {anchor: "Soporte1_3:1", joint: "motor1-BL", servo: M1_3}
+    thigh: {anchor: "Soporte2_3:1", joint: "motor2-BL", servo: M2_3}
+    knee:  {anchor: "Pata_3:1",     joint: "eje-pata-BL", servo: M3_3}
+  br:
+    hip:   {anchor: "Soporte1_4:1", joint: "motor1-BR", servo: M1_4}
+    thigh: {anchor: "Soporte2_4:1", joint: "motor2-BR", servo: M2_4}
+    knee:  {anchor: "Pata_4:1",     joint: "eje-pata-BR", servo: M3_4}
+
+leg_colors:
+  hip:   [0.15, 0.35, 0.70, 1.0]
+  thigh: [0.20, 0.55, 0.85, 1.0]
+  shin:  [0.95, 0.55, 0.15, 1.0]
+
+# Joints that move in the CAD but are rigid in the URDF. The knee of this leg
+# version is driven by a screw (motor3 -> screw -> pushrod -> shin). URDF only
+# describes trees, so the screw mechanism is frozen into the thigh and the knee
+# becomes a direct hinge ("knee.joint" above).
+merge_joints:
+  - motor3-FL
+  - motor3-FR
+  - motor3-BL
+  - motor3-BR
+  - tor-FR
+  - tor-BL
+  - tor-BR
+  - torCase-art-FR
+  - torCase-art-BL
+  - torCase-art-BR
+  - Cylindrical 194   # FL leg (older part names)
+  - Revolute 199      # FL leg
+
+# Joints ignored completely: they close the knee loop (pushrod -> shin).
+drop_joints:
+  - art-pata-FR
+  - art-pata-BL
+  - art-pata-BR
+  - Revolute 198      # FL leg
+
+# Parts left out of the robot.
+exclude_parts:
+  - "Modelo de pierna_Pierna 2_1:1"   # hidden duplicate of the FL thigh plate
+  - "Tornillo_Soporte v1:1"           # loose copy 24 cm away, not attached
+
+# Hidden parts that are on the real robot. Every other hidden part is an error
+# unless it is in exclude_parts.
+hidden_parts:
+  "Tapa:1": {link: body_link, visual: true}   # top cover
+  "base_link:1+Raspberry Pi 4 Model B v1 v2:1": {link: body_link, visual: false}
+  "base_link:1+ROBOTIS_U2D2_Power_Hub_Board v2 v2:1": {link: body_link, visual: false}
+
+# Parts that count for the mass but are not drawn. In the real robot the
+# pushrod and its pivot move with the knee; here they are frozen into the
+# thigh, so drawing them would look broken when the knee moves.
+not_drawn_parts:
+  - "Modelo de pierna_2:1"            # FR pushrod
+  - "Modelo de pierna_3:1"            # BL pushrod
+  - "Modelo de pierna_4:1"            # BR pushrod
+  - "Tornillo para pata case2.5 v1:1" # FL pushrod
+  - "Modelo de pierna_Articulacion_1:1"
+  - "Modelo de pierna_Articulacion_2:1"
+  - "Modelo de pierna_Articulacion_3:1"
+  - "Modelo de pierna_Articulacion_4:1"
+
+# Real masses for parts modeled with a wrong one (shell-only CAD models).
+# Keys are shell-style patterns matched against the part name.
+mass_overrides_kg:
+  "M?_?:1": 0.0546   # Dynamixel AX-12A datasheet mass (CAD: 41-42 g)
+
+# Provisional joint limits, measured from the CAD pose (angle 0 = CAD pose).
+# The CAD has no limits yet; replace with measured values from the real robot.
+joint_limits_rad:
+  hip:   [-0.6, 0.6]
+  thigh: [-1.4, 1.4]
+  knee:  [-1.4, 1.4]
+
+# Dynamixel AX-12A at 12 V: stall torque 1.5 N*m, no-load speed 59 rpm.
+joint_effort_nm: 1.5
+joint_velocity_rad_s: 6.17
+joint_damping: 0.05
+joint_friction: 0.02
+
+collision:
+  foot_sphere_radius_m: 0.008

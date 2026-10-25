@@ -1,0 +1,10 @@
+{
+  "autodeskProduct": "Fusion",
+  "type": "script",
+  "author": "Ceimtun-RAS / MiniQ-bot",
+  "description": {
+    "": "Exports meshes, mass properties and joints of the open robot assembly to Downloads/miniqbot_export (first half of the Fusion -> URDF pipeline)."
+  },
+  "supportedOS": "windows|mac",
+  "editEnabled": true
+}
