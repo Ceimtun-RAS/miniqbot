@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Shows the robot in RViz with one slider per joint. No hardware, no simulation. -->
+  <let name="model" value="$(find-pkg-share miniqbot_description)/urdf/miniqbot.urdf"/>
+
+  <node pkg="robot_state_publisher" exec="robot_state_publisher" output="screen">
+    <param name="robot_description" value="$(command 'xacro $(var model)')" type="str"/>
+  </node>
+
+  <node pkg="joint_state_publisher_gui" exec="joint_state_publisher_gui"/>
+
+  <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share miniqbot_description)/rviz/display.rviz"/>
+</launch>

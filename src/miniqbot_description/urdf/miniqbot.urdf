@@ -1,0 +1,336 @@
+<?xml version="1.0"?>
+<!--
+  GENERATED FILE, DO NOT EDIT BY HAND.
+  Source: Fusion design 'Fixed for URDF v43', via tools/fusion_to_urdf (see its README).
+  Regenerate: python3 tools/fusion_to_urdf/build_urdf.py
+
+  All link frames are parallel to base_link. Joint angle 0 = CAD pose.
+  Total mass: 1.517 kg
+-->
+<robot name="miniqbot">
+  <link name="base_link">
+  </link>
+  <link name="body_link">
+    <inertial>
+      <origin xyz="-0.00284444 0.000252426 -0.00959847" rpy="0 0 0"/>
+      <mass value="0.738955"/>
+      <inertia ixx="0.00189011" ixy="2.10814e-05" ixz="-3.39686e-05" iyy="0.00293598" iyz="3.8419e-06" izz="0.00436172"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/body_link.stl"/></geometry>
+      <material name="body_link_color"><color rgba="0.25 0.25 0.28 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="-0.0001178 0 -0.0085" rpy="0 0 0"/>
+      <geometry><box size="0.250036 0.168 0.055"/></geometry>
+    </collision>
+  </link>
+  <link name="fl_hip_link">
+    <inertial>
+      <origin xyz="0.0268858 0.000977383 -0.000109427" rpy="0 0 0"/>
+      <mass value="0.0587362"/>
+      <inertia ixx="9.56414e-06" ixy="-2.51464e-07" ixz="7.65986e-09" iyy="1.61892e-05" iyz="2.28975e-07" izz="1.90158e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/fl_hip_link.stl"/></geometry>
+      <material name="fl_hip_link_color"><color rgba="0.15 0.35 0.7 1"/></material>
+    </visual>
+  </link>
+  <link name="fl_thigh_link">
+    <inertial>
+      <origin xyz="-0.0218307 0.0296596 0.0116426" rpy="0 0 0"/>
+      <mass value="0.087929"/>
+      <inertia ixx="2.99331e-05" ixy="9.18831e-06" ixz="-2.58275e-05" iyy="0.000102297" iyz="2.35644e-06" izz="0.000104895"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/fl_thigh_link.stl"/></geometry>
+      <material name="fl_thigh_link_color"><color rgba="0.2 0.55 0.85 1"/></material>
+    </visual>
+  </link>
+  <link name="fl_shin_link">
+    <inertial>
+      <origin xyz="0.00459492 0.00119032 -0.0477265" rpy="0 0 0"/>
+      <mass value="0.0221488"/>
+      <inertia ixx="4.05706e-05" ixy="2.9591e-07" ixz="3.69262e-06" iyy="4.14926e-05" iyz="-3.19876e-06" izz="1.79082e-06"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/fl_shin_link.stl"/></geometry>
+      <material name="fl_shin_link_color"><color rgba="0.95 0.55 0.15 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0.00843536 2.34946e-05 -0.104502" rpy="0 0 0"/>
+      <geometry><sphere radius="0.008"/></geometry>
+    </collision>
+  </link>
+  <link name="fr_hip_link">
+    <inertial>
+      <origin xyz="0.0268858 -0.000982858 3.30753e-05" rpy="0 0 0"/>
+      <mass value="0.0587362"/>
+      <inertia ixx="9.56414e-06" ixy="2.51312e-07" ixz="8.07291e-09" iyy="1.61708e-05" iyz="1.43521e-08" izz="1.90341e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/fr_hip_link.stl"/></geometry>
+      <material name="fr_hip_link_color"><color rgba="0.15 0.35 0.7 1"/></material>
+    </visual>
+  </link>
+  <link name="fr_thigh_link">
+    <inertial>
+      <origin xyz="-0.0297698 -0.0337521 0.010976" rpy="0 0 0"/>
+      <mass value="0.121451"/>
+      <inertia ixx="5.17073e-05" ixy="-2.20512e-05" ixz="-4.9892e-05" iyy="0.000177979" iyz="-6.0845e-06" izz="0.000178035"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/fr_thigh_link.stl"/></geometry>
+      <material name="fr_thigh_link_color"><color rgba="0.2 0.55 0.85 1"/></material>
+    </visual>
+  </link>
+  <link name="fr_shin_link">
+    <inertial>
+      <origin xyz="0.0273127 0.00562565 -0.0383379" rpy="0 0 0"/>
+      <mass value="0.0228913"/>
+      <inertia ixx="2.25959e-05" ixy="-8.81892e-08" ixz="1.48752e-05" iyy="3.38267e-05" iyz="1.00617e-07" izz="1.15679e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/fr_shin_link.stl"/></geometry>
+      <material name="fr_shin_link_color"><color rgba="0.95 0.55 0.15 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0.0563509 0.00796313 -0.0880439" rpy="0 0 0"/>
+      <geometry><sphere radius="0.008"/></geometry>
+    </collision>
+  </link>
+  <link name="bl_hip_link">
+    <inertial>
+      <origin xyz="-0.0268858 0.000983387 -3.5588e-06" rpy="0 0 0"/>
+      <mass value="0.0587362"/>
+      <inertia ixx="9.56414e-06" ixy="2.5081e-07" ixz="-1.74294e-08" iyy="1.61737e-05" iyz="9.22677e-08" izz="1.90312e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/bl_hip_link.stl"/></geometry>
+      <material name="bl_hip_link_color"><color rgba="0.15 0.35 0.7 1"/></material>
+    </visual>
+  </link>
+  <link name="bl_thigh_link">
+    <inertial>
+      <origin xyz="-0.0339098 0.0336581 -0.00495595" rpy="0 0 0"/>
+      <mass value="0.121457"/>
+      <inertia ixx="0.000129399" ixy="1.63296e-05" ixz="-0.000106661" iyy="0.000231549" iyz="1.34592e-05" izz="0.000151875"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/bl_thigh_link.stl"/></geometry>
+      <material name="bl_thigh_link_color"><color rgba="0.2 0.55 0.85 1"/></material>
+    </visual>
+  </link>
+  <link name="bl_shin_link">
+    <inertial>
+      <origin xyz="0.0424235 -0.00646197 -0.0201473" rpy="0 0 0"/>
+      <mass value="0.0228913"/>
+      <inertia ixx="7.4378e-06" ixy="6.45529e-07" ixz="1.25804e-05" iyy="3.38111e-05" iyz="-3.33121e-07" izz="2.67417e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/bl_shin_link.stl"/></geometry>
+      <material name="bl_shin_link_color"><color rgba="0.95 0.55 0.15 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0.0918573 -0.00998787 -0.0495282" rpy="0 0 0"/>
+      <geometry><sphere radius="0.008"/></geometry>
+    </collision>
+  </link>
+  <link name="br_hip_link">
+    <inertial>
+      <origin xyz="-0.0268858 -0.000982968 -3.20527e-05" rpy="0 0 0"/>
+      <mass value="0.0587362"/>
+      <inertia ixx="9.56414e-06" ixy="-2.51285e-07" ixz="1.21833e-08" iyy="1.61708e-05" iyz="-4.04355e-09" izz="1.90342e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/br_hip_link.stl"/></geometry>
+      <material name="br_hip_link_color"><color rgba="0.15 0.35 0.7 1"/></material>
+    </visual>
+  </link>
+  <link name="br_thigh_link">
+    <inertial>
+      <origin xyz="-0.0316248 -0.0337997 -0.00254893" rpy="0 0 0"/>
+      <mass value="0.121457"/>
+      <inertia ixx="0.000111367" ixy="-1.73127e-05" ixz="-8.0819e-05" iyy="0.000178787" iyz="-1.45574e-05" izz="0.000119019"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/br_thigh_link.stl"/></geometry>
+      <material name="br_thigh_link_color"><color rgba="0.2 0.55 0.85 1"/></material>
+    </visual>
+  </link>
+  <link name="br_shin_link">
+    <inertial>
+      <origin xyz="0.0419939 0.00582006 -0.0212147" rpy="0 0 0"/>
+      <mass value="0.0228913"/>
+      <inertia ixx="7.96652e-06" ixy="-2.44118e-07" ixz="1.29824e-05" iyy="3.38251e-05" iyz="1.13488e-07" izz="2.61989e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://miniqbot_description/meshes/br_shin_link.stl"/></geometry>
+      <material name="br_shin_link_color"><color rgba="0.95 0.55 0.15 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0.0908079 0.00841257 -0.051708" rpy="0 0 0"/>
+      <geometry><sphere radius="0.008"/></geometry>
+    </collision>
+  </link>
+  <link name="fl_foot">
+  </link>
+  <link name="fr_foot">
+  </link>
+  <link name="bl_foot">
+  </link>
+  <link name="br_foot">
+  </link>
+
+  <!-- base_link is a plain frame at the body -->
+  <joint name="base_to_body" type="fixed">
+    <parent link="base_link"/>
+    <child link="body_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <!-- CAD joint 'motor1-FL', servo M1_1 -->
+  <joint name="fl_hip_joint" type="revolute">
+    <parent link="body_link"/>
+    <child link="fl_hip_link"/>
+    <origin xyz="0.06204 0.0612574 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.6" upper="0.6" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'motor2-FL', servo M2_1 -->
+  <joint name="fl_thigh_joint" type="revolute">
+    <parent link="fl_hip_link"/>
+    <child link="fl_thigh_link"/>
+    <origin xyz="0.0415 0.0208732 -0.00167086" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.4" upper="1.4" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'Revolute 197', servo M3_1 -->
+  <joint name="fl_knee_joint" type="revolute">
+    <parent link="fl_thigh_link"/>
+    <child link="fl_shin_link"/>
+    <origin xyz="-0.107392 0.0341438 -0.0308935" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.4" upper="1.4" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'motor1-FR', servo M1_2 -->
+  <joint name="fr_hip_joint" type="revolute">
+    <parent link="body_link"/>
+    <child link="fr_hip_link"/>
+    <origin xyz="0.06204 -0.0612574 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.6" upper="0.6" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'motor2-FR', servo M2_2 -->
+  <joint name="fr_thigh_joint" type="revolute">
+    <parent link="fr_hip_link"/>
+    <child link="fr_thigh_link"/>
+    <origin xyz="0.0415 -0.0209398 9.48605e-05" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.4" upper="1.4" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'eje-pata-FR', servo M3_2 -->
+  <joint name="fr_knee_joint" type="revolute">
+    <parent link="fr_thigh_link"/>
+    <child link="fr_shin_link"/>
+    <origin xyz="-0.106306 -0.0466442 -0.031726" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.4" upper="1.4" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'motor1-BL', servo M1_3 -->
+  <joint name="bl_hip_joint" type="revolute">
+    <parent link="body_link"/>
+    <child link="bl_hip_link"/>
+    <origin xyz="-0.06204 0.0612574 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.6" upper="0.6" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'motor2-BL', servo M2_3 -->
+  <joint name="bl_thigh_joint" type="revolute">
+    <parent link="bl_hip_link"/>
+    <child link="bl_thigh_link"/>
+    <origin xyz="-0.0415 0.0209288 -0.000685177" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.4" upper="1.4" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'eje-pata-BL', servo M3_3 -->
+  <joint name="bl_knee_joint" type="revolute">
+    <parent link="bl_thigh_link"/>
+    <child link="bl_shin_link"/>
+    <origin xyz="-0.0849135 0.0441359 -0.0729724" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.4" upper="1.4" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'motor1-BR', servo M1_4 -->
+  <joint name="br_hip_joint" type="revolute">
+    <parent link="body_link"/>
+    <child link="br_hip_link"/>
+    <origin xyz="-0.06204 -0.0612574 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.6" upper="0.6" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'motor2-BR', servo M2_4 -->
+  <joint name="br_thigh_joint" type="revolute">
+    <parent link="br_hip_link"/>
+    <child link="br_thigh_link"/>
+    <origin xyz="-0.0415 -0.02094 -2.05161e-05" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.4" upper="1.4" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- CAD joint 'eje-pata-BR', servo M3_4 -->
+  <joint name="br_knee_joint" type="revolute">
+    <parent link="br_thigh_link"/>
+    <child link="br_shin_link"/>
+    <origin xyz="-0.0835459 -0.0464284 -0.0731283" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.4" upper="1.4" effort="1.5" velocity="6.17"/>
+    <dynamics damping="0.05" friction="0.02"/>
+  </joint>
+  <!-- center of the foot contact sphere -->
+  <joint name="fl_foot_joint" type="fixed">
+    <parent link="fl_shin_link"/>
+    <child link="fl_foot"/>
+    <origin xyz="0.00843536 2.34946e-05 -0.104502" rpy="0 0 0"/>
+  </joint>
+  <!-- center of the foot contact sphere -->
+  <joint name="fr_foot_joint" type="fixed">
+    <parent link="fr_shin_link"/>
+    <child link="fr_foot"/>
+    <origin xyz="0.0563509 0.00796313 -0.0880439" rpy="0 0 0"/>
+  </joint>
+  <!-- center of the foot contact sphere -->
+  <joint name="bl_foot_joint" type="fixed">
+    <parent link="bl_shin_link"/>
+    <child link="bl_foot"/>
+    <origin xyz="0.0918573 -0.00998787 -0.0495282" rpy="0 0 0"/>
+  </joint>
+  <!-- center of the foot contact sphere -->
+  <joint name="br_foot_joint" type="fixed">
+    <parent link="br_shin_link"/>
+    <child link="br_foot"/>
+    <origin xyz="0.0908079 0.00841257 -0.051708" rpy="0 0 0"/>
+  </joint>
+</robot>
