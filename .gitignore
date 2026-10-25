@@ -2,3 +2,6 @@
 build/
 install/
 log/
+
+# Python cache (created when running scripts and tests)
+__pycache__/
